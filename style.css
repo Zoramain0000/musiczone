@@ -1,0 +1,279 @@
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: rgba(0,0,0,0.1);
+        color: red;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      /* Video background */
+      #bgVideo {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -1; /* behind everything */
+        pointer-events: none; /* clicks pass through */
+      }
+      nav {
+        background: rgba(0,0,0,0.1);
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 0 10px red;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+      .logo {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: red;
+      }
+      .nav-links {
+        display: flex;
+        gap: 20px;
+        list-style: none;
+      }
+      .nav-links a {
+        color: red;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .nav-links a.active, .nav-links a:hover {
+        color: white;
+      }
+      .settings-dropdown {
+        position: relative;
+      }
+      .settings-btn {
+        background: transparent;
+        color: red;
+        border: 1px solid red;
+        padding: 5px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .dropdown-menu {
+        position: absolute;
+        top: 130%;
+        right: 0;
+        background: #222;
+        border-radius: 8px;
+        display: none;
+        flex-direction: column;
+        min-width: 180px;
+        box-shadow: 0 0 10px red;
+      }
+      .dropdown-menu a, .dropdown-menu button {
+        padding: 10px;
+        color: white;
+        text-decoration: none;
+        background: transparent;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      .dropdown-menu a:hover, .dropdown-menu button:hover {
+        background: red;
+        color: white;
+      }
+      .settings-dropdown:hover .dropdown-menu {
+        display: flex;
+      }
+      main.container {
+        max-width: 900px;
+        margin: 30px auto 60px;
+        padding: 0 20px 40px;
+        flex: 1;
+      }
+      h1 {
+        text-align: center;
+        color: red;
+        margin-bottom: 20px;
+      }
+      form {
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 40px;
+        box-shadow: 0 0 10px red;
+      }
+      form input, form textarea, form select {
+        width: 100%;
+        margin: 10px 0;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        background: #222;
+        color: white;
+      }
+      form button {
+        padding: 10px 20px;
+        background: red;
+        border: none;
+        color: white;
+        font-weight: bold;
+        border-radius: 20px;
+        cursor: pointer;
+        box-shadow: 0 0 10px red;
+        margin-top: 10px;
+      }
+      .filter-export {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        gap: 10px;
+      }
+      .music-list .track {
+        background: rgba(255,255,255,0.05);
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+        position: relative;
+      }
+      .track img {
+        max-width: 120px;
+        border-radius: 8px;
+      }
+      .track-content {
+        flex: 1;
+        min-width: 200px;
+      }
+      .track h3 {
+        margin: 5px 0;
+        color: #f44;
+      }
+      .track p {
+        margin: 5px 0;
+      }
+      audio {
+        width: 100%;
+        margin-top: 10px;
+      }
+      .delete-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #b22222;
+        border: none;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        cursor: pointer;
+        font-weight: bold;
+        box-shadow: 0 0 8px #b22222;
+        transition: background 0.3s ease;
+      }
+      .delete-btn:hover {
+        background: #ff0000;
+      }
+      .privacy-toggle {
+        margin-top: 8px;
+        font-size: 0.9rem;
+        color: #ccc;
+        cursor: pointer;
+        user-select: none;
+      }
+      .privacy-toggle input {
+        margin-right: 6px;
+        cursor: pointer;
+      }
+      #searchMyTracks, #searchByUser {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        border: none;
+        background: #222;
+        color: white;
+        font-size: 1rem;
+      }
+      #searchByUserBtn {
+        padding: 10px 20px;
+        background: red;
+        border: none;
+        color: white;
+        font-weight: bold;
+        border-radius: 20px;
+        cursor: pointer;
+        box-shadow: 0 0 10px red;
+        margin-left: 10px;
+      }
+      /* Modal */
+      #agreementModal, #loginModal {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85);
+        color: white;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+      }
+      #agreementModal .modal-content, #loginModal .modal-content {
+        background: #222;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 500px;
+        text-align: center;
+      }
+      #agreementModal button, #loginModal button {
+        margin: 10px;
+        padding: 10px 20px;
+        border-radius: 20px;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      #agreementModal .agree, #loginModal .login-btn {
+        background: red;
+      }
+      #agreementModal .cancel, #loginModal .cancel-btn {
+        background: gray;
+      }
+      /* Responsive */
+      @media (max-width: 600px) {
+        .nav-links {
+          display: none;
+        }
+        .track {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .track img {
+          width: 100%;
+        }
+        .delete-btn {
+          position: static;
+          margin-top: 10px;
+          align-self: flex-end;
+        }
+        #searchByUserBtn {
+          margin-left: 0;
+          margin-top: 10px;
+          width: 100%;
+        }
+        .filter-export {
+          flex-direction: column;
+          gap: 10px;
+        }
+      }
+    </style>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🎵 Music Zone — Feel the Rhythm</title>
+
+<!-- Your Styles -->
+<style>
+  /* Reset and base styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: rgba(0,0,0,0.1);
+    color: red;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    height: 100%;
+  }
+
+  /* Background video */
+  video.bg-video {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: cover;
+    z-index: -1;
+    filter: brightness(0.3);
+  }
+
+  /* Navigation */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.1);
+    z-index: 1000;
+    box-shadow: 0 0 10px red;
+    padding: 0.7rem 0;
+  }
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 30px;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+  }
+  .logo {
+    font-size: 1.6rem; font-weight: bold; color: red; flex: 1;
+  }
+  .nav-links {
+    list-style: none; display: flex; gap: 25px; justify-content: center; flex: 2;
+  }
+  .nav-links li a {
+    text-decoration: none; color: red; font-weight: 500; transition: color 0.3s;
+  }
+  #dashboardBtn {
+    display: inline-block; padding: 8px 12px; background-color: transparent; color: red; text-decoration: none; font-weight: bold; border-radius: 4px; transition: background-color 0.3s, color 0.3s;
+  }
+  #dashboardBtn:hover {
+    background: rgba(0,0,0,0.1); color: red;
+  }
+
+  @media(max-width:768px){
+    .nav-container { flex-direction: column; text-align: center; }
+    .nav-links { flex-direction: column; gap: 10px; margin-top: 10px; }
+    .logo { margin-bottom: 10px; }
+  }
+
+  /* Overlay intro */
+  .overlay {
+    height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;
+  }
+  h1 {
+    font-size: 4rem; text-shadow: 0 0 15px red; background: rgba(0,0,0,0.1); margin: 0 0 1rem 0;
+  }
+  p {
+    font-size: 1.2rem; max-width: 600px; margin: 1rem auto 2rem; color: red; background: rgba(0,0,0,0.1); padding: 0.5rem 1rem; border-radius: 10px;
+  }
+  .btn {
+    padding: 15px 30px; font-size: 1rem; background: rgba(0,0,0,0.1); color: red; border: none; border-radius: 30px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px red;
+  }
+  .btn:hover {
+    background: rgba(0,0,0,0.2); color: red;
+  }
+
+  /* Sections styling */
+  .music-player, .artist-slider {
+    padding: 60px 20px; text-align: center;
+  }
+  .music-player { background: rgba(0,0,0,0.1); }
+  h2 { font-size: 2rem; margin-bottom: 20px; color: red; }
+
+  /* Artist slider styles */
+  .slider {
+    display: flex; overflow-x: auto; gap: 20px; padding-bottom: 20px; scroll-behavior: smooth; flex-wrap: nowrap;
+  }
+  .artist {
+    min-width: 150px; background: rgba(0,0,0,0.1); border-radius: 15px; padding: 10px; flex-shrink: 0; transition: transform 0.3s ease; cursor: pointer;
+  }
+  .artist:hover { transform: scale(1.08); }
+  .artist img {
+    width: 100%; border-radius: 10px; transition: transform 0.3s ease;
+  }
+  .artist p { margin-top: 10px; color: red; }
+
+  /* Search box */
+  .search-box {
+    margin-bottom: 30px;
+  }
+  .search-box input {
+    padding: 10px 20px; width: 80%; max-width: 400px; border-radius: 25px; border: none; outline: none; font-size: 1rem;
+  }
+
+  /* Auth buttons */
+  .auth-buttons { margin-top: 20px; }
+  .auth-buttons button {
+    margin: 0 10px; background: transparent; border: 1px solid red; padding: 10px 20px; color: red; border-radius: 20px; cursor: pointer; transition: background 0.3s, color 0.3s;
+  }
+  .auth-buttons button:hover { background: red; color: green; }
+
+  /* User info table */
+  .user-info-table {
+    margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 400px; background: rgba(0,0,0,0.1); color: red; border-radius: 10px; overflow: hidden; box-shadow: 0 0 10px red;
+  }
+  .user-info-table th, .user-info-table td {
+    border: 1px solid red; padding: 10px; text-align: left;
+  }
+  .user-info-table th { background: rgba(0,0,0,0.2); }
+
+  /* User menu & buttons */
+  .header-user-menu {
+    color: red; cursor: pointer; font-weight: 600; margin-left: 20px; user-select: none;
+  }
+  .header-user-menu:hover { color: red; }
+  .logout-btn {
+    margin-left: 15px; background: transparent; border: 1px solid red; color: red; padding: 5px 10px; border-radius: 15px; cursor: pointer; font-size: 0.9rem; transition: background 0.3s, color 0.3s;
+  }
+  .logout-btn:hover { background: red; color: black; }
+
+  /* Modal styles */
+  .hero-modal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center; padding: 20px;
+  }
+  .hero-modal.active { display: flex; }
+  .hero-form-container {
+    background: #111; border-radius: 15px; width: 420px; max-width: 100%; padding: 40px 30px; box-shadow: 0 8px 30px rgba(0,0,0,0.8); color: red; font-family: 'Segoe UI', sans-serif; position: relative; overflow: hidden;
+  }
+  .hero-form-header { text-align: center; margin-bottom: 30px; }
+  .hero-form-header h2 { margin: 0; font-weight: 700; font-size: 2.5rem; color: red; }
+  .form-toggle-buttons { display: flex; justify-content: center; margin-bottom: 30px; gap: 20px; }
+  .form-toggle-buttons button {
+    background: rgba(0,0,0,0.1); border: none; color: red; font-weight: 600; font-size: 1.1rem; padding: 10px 25px; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s ease; user-select: none;
+  }
+  .form-toggle-buttons button.active { color: red; border-color: red; }
+  form.hero-form { display: none; flex-direction: column; }
+  form.hero-form.active { display: flex; }
+  label { font-size: 0.9rem; margin-bottom: 6px; color: #aaa; }
+  input[type=text], input[type=email], input[type=password] {
+    padding: 12px 15px; margin-bottom: 20px; border-radius: 8px; border: none; outline: none; font-size: 1rem; background: rgba(0,0,0,0.1); color: red; transition: background 0.3s;
+  }
+  input[type=text]:focus, input[type=email]:focus, input[type=password]:focus {
+    background: rgba(0,0,0,0.1);
+  }
+  .submit-btn {
+    padding: 15px 0; background: red; border: none; border-radius: 30px; font-weight: 700; font-size: 1.2rem; color: #111; cursor: pointer; box-shadow: 0 0 15px red; transition: background 0.3s;
+  }
+  .submit-btn:hover { background: #3ac76b; }
+  .error-message {
+    color: #f87171; font-size: 0.9rem; margin-top: -15px; margin-bottom: 15px; min-height: 20px; user-select: none;
+  }
+  .close-modal-btn {
+    position: absolute; top: 15px; right: 20px; background: transparent; border: none; font-size: 1.8rem; color: red; cursor: pointer; user-select: none; transition: color 0.3s;
+  }
+  .close-modal-btn:hover { color: #82f9a1; }
+
+  /* Additional modal styles for change password modal */
+  #changePasswordModal .hero-form-container { width: 460px; }
+  #changePasswordModal .error-message { color: #f87171; min-height: 20px; margin-bottom: 15px; }
+  #changePasswordModal .info-message { color: red; min-height: 20px; margin-bottom: 15px; user-select: none; }
+  #changePasswordModal .toggle-mode { margin-bottom: 20px; text-align: center; color: red; cursor: pointer; user-select: none; font-weight: 600; }
+  #changePasswordModal .toggle-mode:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- Background video -->
+<video class="bg-video" autoplay muted loop playsinline>
+  <source src="4990236-hd_1920_1080_30fps.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-container" style="display:flex; align-items:center; justify-content:space-between; padding:10px;">
+    <div class="logo" style="font-size:1.5em; font-weight:bold; color:#fff; color:red;">Music Zone</div>
+    <ul class="nav-links" id="navLinks" style="display:flex; list-style:none; gap:15px; margin:0; padding:0;">
+      <li><a href="#player" style="color:#fff; text-decoration:none; color:red;">Player</a></li>
+      <li><a href="#artists" style="color:#fff; text-decoration:none; color:red;">Artists</a></li>
+      <!-- Fixed Main Page link -->
+      <li><a href="dashboard.html" id="dashboardBtn">Main Page</a></li>
+      <li><a href="#" onclick="openHeroModal('login')">Login</a></li>
+      <li><a href="#" onclick="openHeroModal('signup')">Sign Up</a></li>
+    </ul>
+    <div id="userMenu" style="display:none; flex:1; justify-content:flex-end; align-items:center;">
+      <span class="header-user-menu" id="userNameDisplay" style="margin-right:10px;"></span>
+      <span class="header-user-menu" id="myAccountBtn" style="margin-right:10px; cursor:pointer;">My Account</span>
+      <span class="header-user-menu" id="changePasswordBtn" style="margin-left:20px; cursor:pointer;">Change Password</span>
+      <button class="logout-btn" id="logoutBtn" style="margin-left:10px;">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Intro -->
+<div class="overlay" style="text-align:center; padding:50px; background:rgba(0,0,0,0.5); color:#fff;">
+  <h1>🎶 Welcome to Music Zone</h1>
+  <p>Feel the rhythm. Dive into my personal sound universe. I'm artist/producer/beatmaker/singer/rapper/composer/developer/etc — welcome to the beat-driven world of Music Zone.</p>
+  <button class="btn" onclick="scrollToSection('player')">🎧 Music Player</button>
+  <div class="auth-buttons" style="margin-top:20px;">
+    <button onclick="openHeroModal('login')">Login</button>
+    <button onclick="openHeroModal('signup')">Sign Up</button>
+  </div>
+</div>
+
+<!-- Music Player -->
+<div class="music-player" id="player" style="background:rgba(0,0,0,0.1); padding:20px; color:#fff;">
+  <h2>Now Playing</h2>
+  <audio controls>
+    <source src="Telephonecall.m4a" type="audio/mp3" />
+    Your browser does not support audio playback.
+  </audio>
+</div>
+
+<!-- Artists -->
+<div class="artist-slider" id="artists" style="background:rgba(0,0,0,0.1); padding:20px; color:#fff;">
+  <h2>Featured Artists</h2>
+  <div class="search-box" style="margin-bottom:10px;">
+    <input type="text" id="artistSearch" placeholder="Search artist..." oninput="filterArtists()" />
+  </div>
+  <div class="slider" id="artistList" style="display:flex; overflow-x:auto; gap:15px;">
+    <div class="artist" data-name="josh sulit" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751629604227.jpg" alt="Josh Sulit" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Josh Sulit</p>
+    </div>
+    <div class="artist" data-name="lzubeats" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751629779245.jpg" alt="Lzubeats" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Lzubeats</p>
+    </div>
+    <div class="artist" data-name="lucas zanches" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751629802297.jpg" alt="Lucas Zanches" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Lucas Zanches</p>
+    </div>
+    <div class="artist" data-name="lzu" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751629878173.jpg" alt="Lzu" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Lzu / Lucas_zachary00</p>
+    </div>
+    <div class="artist" data-name="zorathedev00 zorathegreat" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751642701079.jpg" alt="Zorathegreat@" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Zorathedev00</p>
+    </div>
+    <div class="artist" data-name="noris hwants" style="min-width:150px; cursor:pointer;">
+      <img src="FB_IMG_1751642884490.jpg" alt="Noris Hwants" style="width:100px; height:100px; object-fit:cover; border-radius:8px;" />
+      <p style="text-align:center;">Noris Hwants</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- User Info -->
+<div id="userInfoContainer" style="display:none; padding:20px; background:#444; color:#fff;">
+  <h2>Your Account Information</h2>
+  <table id="userInfoTable" style="margin:auto; width:50%; border-collapse:collapse;">
+    <!-- Filled dynamically -->
+  </table>
+</div>
+
+<!-- Hero Modal for Login/Signup -->
+<div class="hero-modal" id="heroModal" aria-hidden="true" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
+  <div style="background:#111; border-radius:8px; max-width:400px; width:90%; padding:40px 30px; position:relative;">
+    <button style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5em; cursor:pointer; color:red;" onclick="closeHeroModal()">×</button>
+    <div style="text-align:center; margin-bottom:20px;">
+      <h2 id="heroModalTitle" style="color:red;">Login</h2>
+    </div>
+    <div style="display:flex; justify-content:space-around; margin-bottom:20px;">
+      <button id="loginTab" style="background:none; border:none; color:#777; font-weight:600; font-size:1.1rem; border-bottom:3px solid transparent; cursor:pointer;" class="active" onclick="switchForm('login')">Login</button>
+      <button id="signupTab" style="background:none; border:none; color:#777; font-weight:600; font-size:1.1rem; border-bottom:3px solid transparent; cursor:pointer;" onclick="switchForm('signup')">Sign Up</button>
+    </div>
+    <form id="loginForm" style="display:flex; flex-direction:column;">
+      <label for="loginUsername">Username</label>
+      <input type="text" id="loginUsername" required />
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" required />
+      <div id="loginError" style="color:#f87171; min-height:20px; font-size:0.9rem; margin-bottom:15px;"></div>
+      <button type="submit" style="background:red; padding:15px; border:none; border-radius:30px; font-weight:700; font-size:1.2rem; cursor:pointer;">Login</button>
+    </form>
+    <form id="signupForm" style="display:none; flex-direction:column;">
+      <label for="signupUsername">Username</label>
+      <input type="text" id="signupUsername" required />
+      <label for="signupEmail">Email</label>
+      <input type="email" id="signupEmail" required />
+      <label for="signupPassword">Password</label>
+      <input type="password" id="signupPassword" required />
+      <div id="signupError" style="color:#f87171; min-height:20px; font-size:0.9rem; margin-bottom:15px;"></div>
+      <button type="submit" style="background:red; padding:15px; border:none; border-radius:30px; font-weight:700; font-size:1.2rem; cursor:pointer;">Sign Up</button>
+    </form>
+  </div>
+</div>
+
+<!-- Change Password / Reset Modal -->
+<div class="hero-modal" id="changePasswordModal" aria-hidden="true" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
+  <div style="background:#111; border-radius:8px; max-width:460px; width:90%; padding:40px 30px; position:relative;">
+    <button style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.5em; cursor:pointer; color:red;" onclick="closeChangePasswordModal()">×</button>
+    <h2 style="text-align:center; color:red;">Change / Reset Password</h2>
+    <div id="toggleMode" style="text-align:center; margin:20px; cursor:pointer; font-weight:600; color:red;">Switch to Reset Password Mode</div>
+    <form id="changePasswordForm" style="display:flex; flex-direction:column;">
+      <label for="cpUsername">Username</label>
+      <input type="text" id="cpUsername" required />
+      <label for="cpCurrentPassword">Current Password</label>
+      <input type="password" id="cpCurrentPassword" />
+      <label for="cpNewPassword">New Password</label>
+      <input type="password" id="cpNewPassword" />
+      <div id="changePasswordError" style="color:#f87171; min-height:20px; font-size:0.9rem; margin-bottom:15px;"></div>
+      <button type="submit" style="background:red; padding:15px; border:none; border-radius:30px; font-weight:700; font-size:1.2rem; cursor:pointer;">Change Password</button>
+    </form>
+    <form id="resetPasswordForm" style="display:none; flex-direction:column;">
+      <label for="rpUsername">Username</label>
+      <input type="text" id="rpUsername" />
+      <label for="rpEmail">Email</label>
+      <input type="email" id="rpEmail" />
+      <label for="rpNewPassword">New Password</label>
+      <input type="password" id="rpNewPassword" />
+      <div id="resetPasswordError" style="color:#f87171; min-height:20px; font-size:0.9rem; margin-bottom:15px;"></div>
+      <button type="submit" style="background:red; padding:15px; border:none; border-radius:30px; font-weight:700; font-size:1.2rem; cursor:pointer;">Reset Password</button>
+    </form>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script>
+  // Utility to get/set users in localStorage
+  const USERS_KEY = 'musicZoneUsers';
+  const LOGGEDIN_KEY = 'musicZoneLoggedIn';
+
+  function getUsers() {
+    const users = localStorage.getItem(USERS_KEY);
+    return users ? JSON.parse(users) : [];
+  }
+  function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+  function setLoggedInUser(username) {
+    localStorage.setItem(LOGGEDIN_KEY, username);
+  }
+  function getLoggedInUser() {
+    return localStorage.getItem(LOGGEDIN_KEY);
+  }
+  function logoutUser() {
+    localStorage.removeItem(LOGGEDIN_KEY);
+  }
+
+  // UI update for login state
+  function updateUI() {
+    const user = getLoggedInUser();
+    const userMenu = document.getElementById('userMenu');
+    if (user) {
+      userMenu.style.display = 'flex';
+      document.querySelector('#userNameDisplay').textContent = user;
+      document.querySelector('#navLinks').style.display = 'none';
+    } else {
+      userMenu.style.display = 'none';
+      document.querySelector('#navLinks').style.display = 'flex';
+    }
+  }
+
+  // Open modal
+  function openHeroModal(type) {
+    document.getElementById('heroModal').style.display = 'flex';
+    document.getElementById('heroModal').setAttribute('aria-hidden', 'false');
+    resetForms();
+    switchForm(type);
+  }
+
+  function closeHeroModal() {
+    document.getElementById('heroModal').style.display = 'none';
+    document.getElementById('heroModal').setAttribute('aria-hidden', 'true');
+  }
+
+  // Switch forms in modal
+  function switchForm(type) {
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const loginTab = document.getElementById('loginTab');
+    const signupTab = document.getElementById('signupTab');
+
+    if (type === 'login') {
+      loginForm.style.display = 'flex';
+      signupForm.style.display = 'none';
+      loginTab.classList.add('active');
+      signupTab.classList.remove('active');
+    } else {
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'flex';
+      signupTab.classList.add('active');
+      loginTab.classList.remove('active');
+    }
+  }
+
+  function resetForms() {
+    document.getElementById('loginForm').reset();
+    document.getElementById('signupForm').reset();
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('signupError').textContent = '';
+  }
+
+  // Handle login
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const users = getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      document.getElementById('loginError').textContent = 'User not found.';
+      return;
+    }
+    if (user.password !== password) {
+      document.getElementById('loginError').textContent = 'Incorrect password.';
+      return;
+    }
+    setLoggedInUser(user.username);
+    updateUI();
+    closeHeroModal();
+  });
+
+  // Handle signup
+  document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('signupUsername').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    const users = getUsers();
+
+    if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+      document.getElementById('signupError').textContent = 'Username already taken.';
+      return;
+    }
+    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      document.getElementById('signupError').textContent = 'Email already registered.';
+      return;
+    }
+    // Save user
+    users.push({ username, email, password });
+    saveUsers(users);
+    setLoggedInUser(username);
+    updateUI();
+    closeHeroModal();
+  });
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    logoutUser();
+    updateUI();
+  });
+
+  // My Account click
+  document.getElementById('myAccountBtn')?.addEventListener('click', () => {
+    document.getElementById('userInfoContainer').style.display = 'block';
+  });
+
+  // Change Password
+  document.getElementById('changePasswordBtn').addEventListener('click', () => {
+    openChangePasswordModal();
+  });
+
+  function openChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'flex';
+    document.getElementById('changePasswordModal').setAttribute('aria-hidden', 'false');
+    resetChangePasswordForms();
+  }
+  function closeChangePasswordModal() {
+    document.getElementById('changePasswordModal').style.display = 'none';
+    document.getElementById('changePasswordModal').setAttribute('aria-hidden', 'true');
+  }
+  let isChangeMode = true;
+  function toggleChangePasswordMode() {
+    isChangeMode = !isChangeMode;
+    document.getElementById('changePasswordForm').style.display = isChangeMode ? 'flex' : 'none';
+    document.getElementById('resetPasswordForm').style.display = isChangeMode ? 'none' : 'flex';
+    document.getElementById('toggleMode').textContent = isChangeMode ? 'Switch to Reset Password Mode' : 'Switch to Change Password Mode';
+  }
+
+  function resetChangePasswordForms() {
+    document.getElementById('changePasswordForm').reset();
+    document.getElementById('resetPasswordForm').reset();
+    document.getElementById('changePasswordError').textContent = '';
+    document.getElementById('resetPasswordError').textContent = '';
+    if (!isChangeMode) toggleChangePasswordMode();
+  }
+
+  // Handle Change Password
+  document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('cpUsername').value.trim();
+    const currentPassword = document.getElementById('cpCurrentPassword').value;
+    const newPassword = document.getElementById('cpNewPassword').value;
+    const users = getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      document.getElementById('changePasswordError').textContent = 'User not found.';
+      return;
+    }
+    if (user.password !== currentPassword) {
+      document.getElementById('changePasswordError').textContent = 'Incorrect current password.';
+      return;
+    }
+    user.password = newPassword;
+    saveUsers(users);
+    document.getElementById('changePasswordError').style.color = 'red';
+    document.getElementById('changePasswordError').textContent = 'Password changed successfully.';
+    document.getElementById('changePasswordForm').reset();
+  });
+
+  // Handle Reset Password
+  document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('rpUsername').value.trim();
+    const email = document.getElementById('rpEmail').value.trim();
+    const newPassword = document.getElementById('rpNewPassword').value;
+    const users = getUsers();
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (!user) {
+      document.getElementById('resetPasswordError').textContent = 'User not found.';
+      return;
+    }
+    if (user.email.toLowerCase() !== email.toLowerCase()) {
+      document.getElementById('resetPasswordError').textContent = 'Email does not match our records.';
+      return;
+    }
+    user.password = newPassword;
+    saveUsers(users);
+    document.getElementById('resetPasswordError').style.color = 'red';
+    document.getElementById('resetPasswordError').textContent = 'Password reset successfully.';
+    document.getElementById('resetPasswordForm').reset();
+  });
+
+  // Utility function to scroll to sections
+  function scrollToSection(id) {
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Filter artists
+  function filterArtists() {
+    const input = document.getElementById('artistSearch').value.toLowerCase();
+    document.querySelectorAll('.artist').forEach(artist => {
+      const name = artist.dataset.name.toLowerCase();
+      artist.style.display = name.includes(input) ? 'block' : 'none';
+    });
+  }
+
+  // Initialize UI
+  window.onload = () => {
+    updateUI();
+  };
+</script>
+
+</body>
+</html>

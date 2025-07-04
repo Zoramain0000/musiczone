@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🎵 Music Zone Dashboard with Profiles & Privacy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+
+<!-- Video Background -->
+<video id="bgVideo" autoplay muted loop playsinline>
+    <source src="4990236-hd_1920_1080_30fps.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
+</video>
+
+<nav>
+    <div class="logo">Music Zone</div>
+    <ul class="nav-links">
+        <li><a href="#" id="navPost" class="active">Post Audio</a></li>
+        <li><a href="#" id="navMyTracks">My Tracks</a></li>
+    </ul>
+    <div class="settings-dropdown">
+        <button class="settings-btn" id="settingsBtn">⚙️ Settings</button>
+        <div class="dropdown-menu" id="settingsMenu">
+            <div style="padding:10px; border-bottom:1px solid #444;">
+                <strong>User:</strong> <span id="currentUserDisplay"></span>
+            </div>
+            <button id="changeUserBtn">Change User</button>
+            <button id="logoutBtn">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+
+    <!-- POST AUDIO SECTION -->
+    <section id="postSection">
+        <h1>🎶 Post Your Track</h1>
+        <form id="audioForm">
+            <input type="text" id="title" placeholder="Track Title" required autocomplete="off" />
+            <textarea id="description" placeholder="Track Description" required></textarea>
+            <select id="permission">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+            </select>
+            <input type="file" id="coverImage" accept="image/*" />
+            <input type="file" id="audioFile" accept="audio/*" required />
+            <!-- New input to post as other user -->
+            <input type="text" id="postAsUser" placeholder="Post as user (optional)" autocomplete="off" />
+            <button type="submit">Upload</button>
+        </form>
+
+        <div class="filter-export">
+            <label for="filterSelect">Filter posts:</label>
+            <select id="filterSelect" onchange="loadPostAudioList()">
+                <option value="all">Show All</option>
+                <option value="public">Public Only</option>
+                <option value="private">Private Only</option>
+            </select>
+            <div>
+                <button onclick="exportToJSON()">Export JSON</button>
+                <button onclick="exportToCSV()">Export CSV</button>
+                <button onclick="downloadAllTracks()">Download ZIP</button>
+            </div>
+        </div>
+
+        <div>
+            <input type="text" id="searchByUser" placeholder="Search tracks by username..." autocomplete="off" />
+            <button id="searchByUserBtn">Search</button>
+        </div>
+
+        <div class="music-list" id="postAudioList"></div>
+    </section>
+
+    <!-- MY TRACKS SECTION -->
+    <section id="myTracksSection" style="display:none;">
+        <h1>📃 My Music Posts</h1>
+        <input type="text" id="searchMyTracks" placeholder="Search your tracks by title..." autocomplete="off" />
+        <div class="music-list" id="myTracksList"></div>
+    </section>
+
+</main>
+
+<!-- AGREEMENT MODAL -->
+<div id="agreementModal">
+    <div class="modal-content">
+        <h2>Upload Terms & Agreement</h2>
+        <p>By uploading, you confirm that you own this content and accept our terms.</p>
+        <button class="agree" onclick="acceptAgreement()">I Agree</button>
+        <button class="cancel" onclick="denyAgreement()">Cancel</button>
+    </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal">
+    <div class="modal-content">
+        <h2>Welcome to Music Zone</h2>
+        <p>Please enter your username to continue:</p>
+        <input type="text" id="loginUsername" placeholder="Username" autocomplete="off" />
+        <div>
+            <button class="login-btn" id="loginSubmitBtn">Login</button>
+            <button class="cancel-btn" id="loginCancelBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Globals
+    let currentUser = null;
+
+    // Elements
+    const navPost = document.getElementById('navPost');
+    const navMyTracks = document.getElementById('navMyTracks');
+    const postSection = document.getElementById('postSection');
+    const myTracksSection = document.getElementById('myTracksSection');
+    const audioForm = document.getElementById('audioForm');
+    const postAudioList = document.getElementById('postAudioList');
+    const myTracksList = document.getElementById('myTracksList');
+    const filterSelect = document.getElementById('filterSelect');
+    const searchMyTracks = document.getElementById('searchMyTracks');
+    const agreementModal = document.getElementById('agreementModal');
+    const loginModal = document.getElementById('loginModal');
+    const loginUsername = document.getElementById('loginUsername');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const loginCancelBtn = document.getElementById('loginCancelBtn');
+    const currentUserDisplay = document.getElementById('currentUserDisplay');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsMenu = document.getElementById('settingsMenu');
+    const changeUserBtn = document.getElementById('changeUserBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const postAsUserInput = document.getElementById('postAsUser');
+    const searchByUserInput = document.getElementById('searchByUser');
+    const searchByUserBtn = document.getElementById('searchByUserBtn');
+
+    // Initialize app
+    function init() {
+        // Load user from localStorage
+        currentUser = localStorage.getItem('musicZoneUser');
+        if (!currentUser) {
+            showLoginModal();
+        } else {
+            currentUserDisplay.textContent = currentUser;
+            loadPostAudioList();
+            loadMyTracksList();
+        }
+    }
+
+    // Show login modal
+    function showLoginModal() {
+        loginModal.style.display = 'flex';
+        loginUsername.value = '';
+        loginUsername.focus();
+    }
+
+    // Hide login modal
+    function hideLoginModal() {
+        loginModal.style.display = 'none';
+    }
+
+    // Login submit
+    loginSubmitBtn.onclick = () => {
+        const username = loginUsername.value.trim();
+        if (!username) {
+            alert('Please enter a username.');
+            loginUsername.focus();
+            return;
+        }
+        currentUser = username;
+        localStorage.setItem('musicZoneUser', currentUser);
+        currentUserDisplay.textContent = currentUser;
+        hideLoginModal();
+        loadPostAudioList();
+        loadMyTracksList();
+    };
+
+    loginCancelBtn.onclick = () => {
+        hideLoginModal();
+        alert('You must login to use the app.');
+    };
+
+    // Logout
+    logoutBtn.onclick = () => {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('musicZoneUser');
+            currentUser = null;
+            showLoginModal();
+            clearUI();
+        }
+    };
+
+    // Change user
+    changeUserBtn.onclick = () => {
+        if (confirm('Changing user will logout current user. Continue?')) {
+            localStorage.removeItem('musicZoneUser');
+            currentUser = null;
+            showLoginModal();
+            clearUI();
+        }
+    };
+
+    // Clear UI lists
+    function clearUI() {
+        postAudioList.innerHTML = '';
+        myTracksList.innerHTML = '';
+    }
+
+    // Navigation handlers
+    navPost.onclick = (e) => {
+        e.preventDefault();
+        navPost.classList.add('active');
+        navMyTracks.classList.remove('active');
+        postSection.style.display = 'block';
+        myTracksSection.style.display = 'none';
+    };
+    navMyTracks.onclick = (e) => {
+        e.preventDefault();
+        navMyTracks.classList.add('active');
+        navPost.classList.remove('active');
+        postSection.style.display = 'none';
+        myTracksSection.style.display = 'block';
+    };
+
+    // Agreement modal handlers
+    audioForm.addEventListener('submit', e => {
+        e.preventDefault();
+        if (!currentUser) {
+            alert('Please login first.');
+            showLoginModal();
+            return;
+        }
+        const agreed = localStorage.getItem('agreedToTerms');
+        if (!agreed || agreed !== 'yes') {
+            agreementModal.style.display = 'flex';
+            return;
+        }
+        continuePost();
+    });
+
+    function acceptAgreement() {
+        localStorage.setItem('agreedToTerms', 'yes');
+        agreementModal.style.display = 'none';
+        continuePost();
+    }
+    function denyAgreement() {
+        agreementModal.style.display = 'none';
+        alert("You must accept the terms to upload.");
+    }
+
+    // Continue posting after agreement
+    function continuePost() {
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const permission = document.getElementById('permission').value;
+        const audioFile = document.getElementById('audioFile').files[0];
+        const coverFile = document.getElementById('coverImage').files[0];
+        const time = new Date().toLocaleString();
+
+        if (!audioFile) return alert("Please upload an audio file");
+
+        // Use postAsUser input if filled, else currentUser
+        let postUser = postAsUserInput.value.trim();
+        if (!postUser) postUser = currentUser;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const audioData = event.target.result;
+            if (coverFile) {
+                const coverReader = new FileReader();
+                coverReader.onload = function(e2) {
+                    savePost(title, description, permission, audioData, e2.target.result, postUser, time);
+                };
+                coverReader.readAsDataURL(coverFile);
+            } else {
+                savePost(title, description, permission, audioData, null, postUser, time);
+            }
+        };
+        reader.readAsDataURL(audioFile);
+    }
+
+    // Save post to localStorage
+    function savePost(title, description, permission, audioData, coverData, user, time) {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        posts.push({
+            id: Date.now() + Math.random().toString(36).substr(2, 9),
+            title,
+            description,
+            permission,
+            audioData,
+            coverData,
+            user,
+            time
+        });
+        localStorage.setItem('musicZonePosts', JSON.stringify(posts));
+        alert('Track uploaded successfully!');
+        audioForm.reset();
+        postAsUserInput.value = '';
+        loadPostAudioList();
+        loadMyTracksList();
+    }
+
+    // Load posts for Post Audio section with filter and search by user
+    function loadPostAudioList() {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        const filter = filterSelect.value;
+        const searchUser = searchByUserInput.value.trim().toLowerCase();
+
+        let filtered = posts.filter(post => {
+            // Filter by permission
+            if (filter === 'public' && post.permission !== 'public') return false;
+            if (filter === 'private' && post.permission !== 'private') return false;
+            // If searching by user, filter by username
+            if (searchUser && !post.user.toLowerCase().includes(searchUser)) return false;
+            return true;
+        });
+
+        // Sort by newest first
+        filtered.sort((a,b) => b.id - a.id);
+
+        postAudioList.innerHTML = '';
+        if (filtered.length === 0) {
+            postAudioList.innerHTML = '<p>No tracks found.</p>';
+            return;
+        }
+
+        filtered.forEach(post => {
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'track';
+
+            const coverImg = document.createElement('img');
+            coverImg.src = post.coverData || 'https://via.placeholder.com/120x120?text=No+Cover';
+            coverImg.alt = 'Cover Image';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'track-content';
+
+            const titleH3 = document.createElement('h3');
+            titleH3.textContent = post.title;
+
+            const descP = document.createElement('p');
+            descP.textContent = post.description;
+
+            const userP = document.createElement('p');
+            userP.innerHTML = `<strong>User:</strong> ${post.user}`;
+
+            const timeP = document.createElement('p');
+            timeP.innerHTML = `<small>Posted: ${post.time}</small>`;
+
+            const permissionP = document.createElement('p');
+            permissionP.innerHTML = `<em>Permission: ${post.permission}</em>`;
+
+            const audioEl = document.createElement('audio');
+            audioEl.controls = true;
+            audioEl.src = post.audioData;
+
+            contentDiv.appendChild(titleH3);
+            contentDiv.appendChild(descP);
+            contentDiv.appendChild(userP);
+            contentDiv.appendChild(timeP);
+            contentDiv.appendChild(permissionP);
+            contentDiv.appendChild(audioEl);
+
+            trackDiv.appendChild(coverImg);
+            trackDiv.appendChild(contentDiv);
+
+            // Show delete button only if currentUser matches post user
+            if (post.user === currentUser) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.onclick = () => {
+                    if (confirm('Delete this track?')) {
+                        deletePost(post.id);
+                    }
+                };
+                trackDiv.appendChild(delBtn);
+            }
+
+            postAudioList.appendChild(trackDiv);
+        });
+    }
+
+    // Load posts for My Tracks section with search by title
+    function loadMyTracksList() {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        const searchTerm = searchMyTracks.value.trim().toLowerCase();
+
+        let filtered = posts.filter(post => post.user === currentUser);
+
+        if (searchTerm) {
+            filtered = filtered.filter(post => post.title.toLowerCase().includes(searchTerm));
+        }
+
+        // Sort by newest first
+        filtered.sort((a,b) => b.id - a.id);
+
+        myTracksList.innerHTML = '';
+        if (filtered.length === 0) {
+            myTracksList.innerHTML = '<p>No tracks found.</p>';
+            return;
+        }
+
+        filtered.forEach(post => {
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'track';
+
+            const coverImg = document.createElement('img');
+            coverImg.src = post.coverData || 'https://via.placeholder.com/120x120?text=No+Cover';
+            coverImg.alt = 'Cover Image';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'track-content';
+
+            const titleH3 = document.createElement('h3');
+            titleH3.textContent = post.title;
+
+            const descP = document.createElement('p');
+            descP.textContent = post.description;
+
+            const timeP = document.createElement('p');
+            timeP.innerHTML = `<small>Posted: ${post.time}</small>`;
+
+            const permissionP = document.createElement('p');
+            permissionP.innerHTML = `<em>Permission: ${post.permission}</em>`;
+
+            const audioEl = document.createElement('audio');
+            audioEl.controls = true;
+            audioEl.src = post.audioData;
+
+            contentDiv.appendChild(titleH3);
+            contentDiv.appendChild(descP);
+            contentDiv.appendChild(timeP);
+            contentDiv.appendChild(permissionP);
+            contentDiv.appendChild(audioEl);
+
+            trackDiv.appendChild(coverImg);
+            trackDiv.appendChild(contentDiv);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn';
+            delBtn.textContent = 'Delete';
+            delBtn.onclick = () => {
+                if (confirm('Delete this track?')) {
+                    deletePost(post.id);
+                }
+            };
+            trackDiv.appendChild(delBtn);
+
+            myTracksList.appendChild(trackDiv);
+        });
+    }
+
+    // Delete post by id
+    function deletePost(id) {
+        let posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        posts = posts.filter(post => post.id !== id);
+        localStorage.setItem('musicZonePosts', JSON.stringify(posts));
+        loadPostAudioList();
+        loadMyTracksList();
+    }
+
+    // Export posts to JSON file (filtered by current filter and search)
+    function exportToJSON() {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        const filter = filterSelect.value;
+        const searchUser = searchByUserInput.value.trim().toLowerCase();
+
+        let filtered = posts.filter(post => {
+            if (filter === 'public' && post.permission !== 'public') return false;
+            if (filter === 'private' && post.permission !== 'private') return false;
+            if (searchUser && !post.user.toLowerCase().includes(searchUser)) return false;
+            return true;
+        });
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filtered, null, 2));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "music_zone_export.json");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    }
+
+    // Export posts to CSV file (filtered by current filter and search)
+    function exportToCSV() {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        const filter = filterSelect.value;
+        const searchUser = searchByUserInput.value.trim().toLowerCase();
+
+        let filtered = posts.filter(post => {
+            if (filter === 'public' && post.permission !== 'public') return false;
+            if (filter === 'private' && post.permission !== 'private') return false;
+            if (searchUser && !post.user.toLowerCase().includes(searchUser)) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            alert('No tracks to export.');
+            return;
+        }
+
+        const headers = ['ID', 'Title', 'Description', 'Permission', 'User', 'Time'];
+        const rows = filtered.map(p => [
+            `"${p.id}"`,
+            `"${p.title.replace(/"/g, '""')}"`,
+            `"${p.description.replace(/"/g, '""')}"`,
+            `"${p.permission}"`,
+            `"${p.user}"`,
+            `"${p.time}"`
+        ]);
+
+        let csvContent = headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+
+        const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "music_zone_export.csv");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    }
+
+    // Download all filtered tracks as ZIP
+    async function downloadAllTracks() {
+        const posts = JSON.parse(localStorage.getItem('musicZonePosts') || '[]');
+        const filter = filterSelect.value;
+        const searchUser = searchByUserInput.value.trim().toLowerCase();
+
+        let filtered = posts.filter(post => {
+            if (filter === 'public' && post.permission !== 'public') return false;
+            if (filter === 'private' && post.permission !== 'private') return false;
+            if (searchUser && !post.user.toLowerCase().includes(searchUser)) return false;
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            alert('No tracks to download.');
+            return;
+        }
+
+        const zip = new JSZip();
+
+        for (const post of filtered) {
+            try {
+                // Convert base64 audio data to blob
+                const base64Audio = post.audioData.split(',')[1];
+                const audioBlob = base64ToBlob(base64Audio, post.audioData.split(';')[0].split(':')[1]);
+                const audioExt = getAudioExtension(post.audioData);
+                zip.file(`${post.user}_${post.title}.${audioExt}`, audioBlob);
+
+                if (post.coverData) {
+                    const base64Cover = post.coverData.split(',')[1];
+                    const coverBlob = base64ToBlob(base64Cover, post.coverData.split(';')[0].split(':')[1]);
+                    const coverExt = getImageExtension(post.coverData);
+                    zip.file(`${post.user}_${post.title}_cover.${coverExt}`, coverBlob);
+                }
+            } catch (e) {
+                console.warn('Error adding file to zip:', e);
+            }
+        }
+
+        const content = await zip.generateAsync({type:"blob"});
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'music_zone_tracks.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    // Helpers to convert base64 to Blob
+    function base64ToBlob(base64, mime) {
+        const byteChars = atob(base64);
+        const byteNumbers = new Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) {
+            byteNumbers[i] = byteChars.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        return new Blob([byteArray], {type: mime});
+    }
+
+    // Get audio extension from data URL
+    function getAudioExtension(dataUrl) {
+        if (dataUrl.startsWith('data:audio/mpeg')) return 'mp3';
+        if (dataUrl.startsWith('data:audio/wav')) return 'wav';
+        if (dataUrl.startsWith('data:audio/ogg')) return 'ogg';
+        if (dataUrl.startsWith('data:audio/mp4')) return 'mp4';
+        return 'audio';
+    }
+
+    // Get image extension from data URL
+    function getImageExtension(dataUrl) {
+        if (dataUrl.startsWith('data:image/jpeg')) return 'jpg';
+        if (dataUrl.startsWith('data:image/png')) return 'png';
+        if (dataUrl.startsWith('data:image/gif')) return 'gif';
+        return 'img';
+    }
+
+    // Search handlers
+    searchMyTracks.addEventListener('input', loadMyTracksList);
+    searchByUserBtn.onclick = () => {
+        loadPostAudioList();
+    };
+    searchByUserInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            loadPostAudioList();
+        }
+    });
+
+    // Initialize app on load
+    window.onload = init;
+
+</script>
+
+</body>
+</html>
